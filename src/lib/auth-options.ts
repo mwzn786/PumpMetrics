@@ -19,9 +19,17 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        });
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email.trim().toLowerCase() },
+          });
+        } catch (err) {
+          // Without this the database being unreachable is indistinguishable
+          // from a wrong password, both client-side and in the logs.
+          console.error("[auth] database lookup failed:", err);
+          throw new Error("DatabaseUnavailable");
+        }
 
         if (!user) return null;
 

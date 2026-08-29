@@ -25,7 +25,14 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      // NextAuth reports bad credentials and server-side faults (unreachable
+      // database, missing NEXTAUTH_SECRET) through the same channel, so keep
+      // them distinguishable instead of blaming the user's input for both.
+      setError(
+        result.error === "CredentialsSignin"
+          ? "Invalid email or password."
+          : `Sign-in failed: ${result.error}. Check the server configuration.`,
+      );
       setLoading(false);
       return;
     }
