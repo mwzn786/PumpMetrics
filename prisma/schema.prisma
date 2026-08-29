@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  super_admin
+  station_manager
+  cashier
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(cashier)
+  stationId    Int?      @map("station_id")
+  station      Station?  @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Station {
+  id          Int             @id @default(autoincrement())
+  name        String          @db.VarChar(100)
+  location    String?         @db.VarChar(255)
+  phone       String?         @db.VarChar(20)
+  managerName String?         @map("manager_name") @db.VarChar(100)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  pumps       Pump[]
+  users       User[]
+  inventory   FuelInventory[]
+  storeSales  StoreSale[]
+
+  @@map("stations")
+}
+
+model Pump {
+  id        Int            @id @default(autoincrement())
+  name      String         @db.VarChar(50)
+  fuelType  String         @map("fuel_type") @db.VarChar(50)
+  stationId Int?           @map("station_id")
+  station   Station?       @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now()) @map("created_at")
+  readings  DailyReading[]
+
+  @@map("pumps")
+}
+
+model DailyReading {
+  id           Int      @id @default(autoincrement())
+  pumpId       Int      @map("pump_id")
+  pump         Pump     @relation(fields: [pumpId], references: [id], onDelete: Cascade)
+  readingDate  DateTime @map("reading_date") @db.Date
+  startReading Decimal  @map("start_reading") @db.Decimal(10, 2)
+  endReading   Decimal  @map("end_reading") @db.Decimal(10, 2)
+  litersSold   Decimal  @map("liters_sold") @db.Decimal(10, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("daily_readings")
+}
+
+model FuelInventory {
+  id                 Int       @id @default(autoincrement())
+  fuelType           String    @map("fuel_type") @db.VarChar(50)
+  currentStock       Decimal   @map("current_stock") @db.Decimal(10, 2)
+  stationId          Int?      @map("station_id")
+  station            Station?  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  lastDeliveryDate   DateTime? @map("last_delivery_date") @db.Date
+  lastDeliveryAmount Decimal?  @map("last_delivery_amount") @db.Decimal(10, 2)
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("fuel_inventory")
+}
+
+model StoreSale {
+  id           Int      @id @default(autoincrement())
+  saleDate     DateTime @map("sale_date") @db.Date
+  cashRevenue  Decimal  @default(0) @map("cash_revenue") @db.Decimal(10, 2)
+  cardRevenue  Decimal  @default(0) @map("card_revenue") @db.Decimal(10, 2)
+  totalRevenue Decimal  @map("total_revenue") @db.Decimal(10, 2)
+  stationId    Int?     @map("station_id")
+  station      Station? @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("store_sales")
+}
