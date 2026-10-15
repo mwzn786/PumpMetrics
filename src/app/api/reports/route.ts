@@ -81,8 +81,12 @@ export async function GET(request: Request) {
       if (existing) {
         existing.totalLiters += liters;
       } else {
+        const unitLabel =
+          r.pump.unitNumber && r.pump.nozzleNumber
+            ? `Unit ${r.pump.unitNumber} / Nozzle ${r.pump.nozzleNumber}`
+            : r.pump.name;
         pumpMap.set(r.pumpId, {
-          pumpName: r.pump.name,
+          pumpName: unitLabel,
           fuelType: r.pump.fuelType,
           totalLiters: liters,
         });
@@ -142,9 +146,12 @@ export async function GET(request: Request) {
         start_reading: dec(r.startReading),
         end_reading: dec(r.endReading),
         liters_sold: dec(r.litersSold),
+        price: r.price != null ? dec(r.price) : null,
         created_at: iso(r.createdAt),
         pumps: {
           name: r.pump.name,
+          unit_number: r.pump.unitNumber,
+          nozzle_number: r.pump.nozzleNumber,
           fuel_type: r.pump.fuelType,
         },
       })),

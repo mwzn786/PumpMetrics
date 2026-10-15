@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStation } from "@/context/StationContext";
 import type { Pump } from "@/lib/types";
+import { formatUnitNozzle } from "@/lib/utils";
 
 const FUEL_TYPES = ["Regular", "Premium", "Diesel"];
 
@@ -16,19 +17,20 @@ function fuelBadgeClass(fuelType: string): string {
   return map[fuelType] ?? "bg-secondary";
 }
 
-export default function PumpsPage() {
+export default function UnitsPage() {
   const { activeStationId, activeStation } = useStation();
-  const [pumps, setPumps] = useState<Pump[]>([]);
+  const [units, setUnits] = useState<Pump[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [fuelType, setFuelType] = useState(FUEL_TYPES[0]);
+  const [unitNumber, setUnitNumber] = useState("");
+  const [nozzleNumber, setNozzleNumber] = useState("");
+  const [nozzleFuelType, setNozzleFuelType] = useState(FUEL_TYPES[0]);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const loadPumps = useCallback(async () => {
+  const loadUnits = useCallback(async () => {
     if (!activeStationId) {
-      setPumps([]);
+      setUnits([]);
       setLoading(false);
       return;
     }
@@ -36,40 +38,46 @@ export default function PumpsPage() {
     setLoading(true);
     const res = await fetch(`/api/pumps?stationId=${activeStationId}`);
     if (res.ok) {
-      setPumps(await res.json());
+      setUnits(await res.json());
       setError(null);
     } else {
-      setError("Failed to load pumps.");
+      setError("Failed to load units.");
     }
     setLoading(false);
   }, [activeStationId]);
 
   useEffect(() => {
-    void loadPumps();
-  }, [loadPumps]);
+    void loadUnits();
+  }, [loadUnits]);
+
+  const resetForm = () => {
+    setUnitNumber("");
+    setNozzleNumber("");
+    setNozzleFuelType(FUEL_TYPES[0]);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !activeStationId) return;
+    if (!unitNumber.trim() || !nozzleNumber.trim() || !activeStationId) return;
 
     setSaving(true);
     const res = await fetch("/api/pumps", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: name.trim(),
-        fuel_type: fuelType,
+        unit_number: unitNumber.trim(),
+        nozzle_number: nozzleNumber.trim(),
+        fuel_type: nozzleFuelType,
         station_id: activeStationId,
       }),
     });
 
     if (!res.ok) {
-      setError("Failed to add pump.");
+      setError("Failed to add unit.");
     } else {
-      setName("");
-      setFuelType(FUEL_TYPES[0]);
+      resetForm();
       setError(null);
-      await loadPumps();
+      await loadUnits();
 
       const modalEl = modalRef.current;
       if (modalEl) {
@@ -80,16 +88,16 @@ export default function PumpsPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: number, pumpName: string) => {
-    if (!confirm(`Delete pump "${pumpName}"? This will also remove its readings.`)) {
+  const handleDelete = async (id: number, label: string) => {
+    if (!confirm(`Delete "${label}"? This will also remove its readings.`)) {
       return;
     }
 
     const res = await fetch(`/api/pumps?id=${id}`, { method: "DELETE" });
     if (!res.ok) {
-      setError("Failed to delete pump.");
+      setError("Failed to delete unit.");
     } else {
-      setPumps((prev) => prev.filter((p) => p.id !== id));
+      setUnits((prev) => prev.filter((u) => u.id !== id));
     }
   };
 
@@ -97,11 +105,11 @@ export default function PumpsPage() {
     return (
       <div>
         <div className="page-header">
-          <h1 className="h3 fw-bold mb-1">Pumps</h1>
+          <h1 className="h3 fw-bold mb-1">Units</h1>
         </div>
         <div className="alert alert-info">
-          Select or create a station first.{" "}
-          <Link href="/stations">Go to Stations</Link>
+          Select or create a filling station first.{" "}
+          <Link href="/stations">Go to Filling Stations</Link>
         </div>
       </div>
     );
@@ -111,19 +119,19 @@ export default function PumpsPage() {
     <div>
       <div className="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="h3 fw-bold mb-1">Pumps</h1>
+          <h1 className="h3 fw-bold mb-1">Units</h1>
           <p className="text-muted mb-0">
-            Machines at <strong>{activeStation?.name}</strong>
+            Units at <strong>{activeStation?.name}</strong>
           </p>
         </div>
         <button
           type="button"
           className="btn btn-primary"
           data-bs-toggle="modal"
-          data-bs-target="#addPumpModal"
+          data-bs-target="#addUnitModal"
         >
           <i className="bi bi-plus-lg me-1" />
-          Add Pump
+          Add Unit
         </button>
       </div>
 
@@ -133,44 +141,59 @@ export default function PumpsPage() {
         <div className="text-center py-5">
           <div className="spinner-border text-primary" role="status" />
         </div>
-      ) : pumps.length === 0 ? (
+      ) : units.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <i className="bi bi-fuel-pump display-4 d-block mb-3" />
-          <p>No pumps at this station yet. Add your first machine.</p>
+          <p>No units at this station yet. Add your first unit.</p>
         </div>
       ) : (
         <div className="row g-3">
-          {pumps.map((pump) => (
-            <div key={pump.id} className="col-12 col-sm-6 col-lg-4">
-              <div className="card pump-card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                      <h5 className="card-title fw-bold mb-1">{pump.name}</h5>
-                      <span className={`badge ${fuelBadgeClass(pump.fuel_type)}`}>
-                        {pump.fuel_type}
-                      </span>
+          {units.map((unit) => {
+            const label = formatUnitNozzle(unit);
+            return (
+              <div key={unit.id} className="col-12 col-sm-6 col-lg-4">
+                <div className="card pump-card border-0 shadow-sm h-100">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <h5 className="card-title fw-bold mb-1">{label}</h5>
+                        <div className="d-flex flex-wrap gap-1 mb-2">
+                          {unit.unit_number && (
+                            <span className="badge bg-light text-dark border">
+                              Unit #{unit.unit_number}
+                            </span>
+                          )}
+                          {unit.nozzle_number && (
+                            <span className="badge bg-light text-dark border">
+                              Nozzle #{unit.nozzle_number}
+                            </span>
+                          )}
+                        </div>
+                        <span className={`badge ${fuelBadgeClass(unit.fuel_type)}`}>
+                          {unit.fuel_type}
+                        </span>
+                      </div>
+                      <i className="bi bi-fuel-pump fs-2 text-primary opacity-50" />
                     </div>
-                    <i className="bi bi-fuel-pump fs-2 text-primary opacity-50" />
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm w-100"
+                      onClick={() => void handleDelete(unit.id, label)}
+                    >
+                      <i className="bi bi-trash me-1" />
+                      Delete
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm w-100"
-                    onClick={() => void handleDelete(pump.id, pump.name)}
-                  >
-                    <i className="bi bi-trash me-1" />
-                    Delete
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <div
         className="modal fade"
-        id="addPumpModal"
+        id="addUnitModal"
         tabIndex={-1}
         ref={modalRef}
       >
@@ -178,7 +201,7 @@ export default function PumpsPage() {
           <div className="modal-content">
             <form onSubmit={(e) => void handleSubmit(e)}>
               <div className="modal-header">
-                <h5 className="modal-title">Add New Pump</h5>
+                <h5 className="modal-title">Add New Unit</h5>
                 <button type="button" className="btn-close" data-bs-dismiss="modal" />
               </div>
               <div className="modal-body">
@@ -188,21 +211,34 @@ export default function PumpsPage() {
                   </small>
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Pump Name / ID</label>
+                  <label className="form-label">Unit Number</label>
                   <input
                     type="text"
                     className="form-control form-control-lg"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={unitNumber}
+                    onChange={(e) => setUnitNumber(e.target.value)}
+                    placeholder="e.g. 1"
                     required
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Fuel Type</label>
+                  <label className="form-label">Nozzle Number</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-lg"
+                    value={nozzleNumber}
+                    onChange={(e) => setNozzleNumber(e.target.value)}
+                    placeholder="e.g. 2"
+                    required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Nozzle Fuel Type</label>
                   <select
                     className="form-select form-select-lg"
-                    value={fuelType}
-                    onChange={(e) => setFuelType(e.target.value)}
+                    value={nozzleFuelType}
+                    onChange={(e) => setNozzleFuelType(e.target.value)}
+                    required
                   >
                     {FUEL_TYPES.map((type) => (
                       <option key={type} value={type}>
@@ -217,7 +253,7 @@ export default function PumpsPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Add Pump"}
+                  {saving ? "Saving..." : "Add Unit"}
                 </button>
               </div>
             </form>

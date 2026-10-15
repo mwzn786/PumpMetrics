@@ -64,7 +64,7 @@ export default function DashboardPage() {
         </div>
         <div className="alert alert-info">
           Select or create a station to view metrics.{" "}
-          <Link href="/stations">Go to Stations</Link>
+          <Link href="/stations">Go to Filling Stations</Link>
         </div>
       </div>
     );

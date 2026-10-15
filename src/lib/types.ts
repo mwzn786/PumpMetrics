@@ -13,6 +13,7 @@ export type UserProfile = {
 export type Station = {
   id: number;
   name: string;
+  station_code: string | null;
   location: string | null;
   phone: string | null;
   manager_name: string | null;
@@ -23,6 +24,8 @@ export type Station = {
 export type Pump = {
   id: number;
   name: string;
+  unit_number: string | null;
+  nozzle_number: string | null;
   fuel_type: string;
   station_id: number | null;
   created_at: string;
@@ -35,6 +38,7 @@ export type DailyReading = {
   start_reading: number;
   end_reading: number;
   liters_sold: number;
+  price: number | null;
   created_at: string;
   pumps?: Pump | null;
 };

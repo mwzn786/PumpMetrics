@@ -29,6 +29,7 @@ model User {
 model Station {
   id          Int             @id @default(autoincrement())
   name        String          @db.VarChar(100)
+  stationCode String?         @map("station_code") @db.VarChar(50)
   location    String?         @db.VarChar(255)
   phone       String?         @db.VarChar(20)
   managerName String?         @map("manager_name") @db.VarChar(100)
@@ -42,13 +43,15 @@ model Station {
 }
 
 model Pump {
-  id        Int            @id @default(autoincrement())
-  name      String         @db.VarChar(50)
-  fuelType  String         @map("fuel_type") @db.VarChar(50)
-  stationId Int?           @map("station_id")
-  station   Station?       @relation(fields: [stationId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now()) @map("created_at")
-  readings  DailyReading[]
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(50)
+  unitNumber   String?        @map("unit_number") @db.VarChar(50)
+  nozzleNumber String?        @map("nozzle_number") @db.VarChar(50)
+  fuelType     String         @map("fuel_type") @db.VarChar(50)
+  stationId    Int?           @map("station_id")
+  station      Station?       @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  readings     DailyReading[]
 
   @@map("pumps")
 }
@@ -61,6 +64,7 @@ model DailyReading {
   startReading Decimal  @map("start_reading") @db.Decimal(10, 2)
   endReading   Decimal  @map("end_reading") @db.Decimal(10, 2)
   litersSold   Decimal  @map("liters_sold") @db.Decimal(10, 2)
+  price        Decimal? @db.Decimal(10, 2)
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("daily_readings")

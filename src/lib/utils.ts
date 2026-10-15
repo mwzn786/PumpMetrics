@@ -49,6 +49,32 @@ export function formatNumber(value: number, decimals = 2): string {
   });
 }
 
+export function formatCurrency(value: number): string {
+  return value.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+}
+
+/** Display label for a unit/nozzle pair (falls back to legacy pump name). */
+export function formatUnitNozzle(unit: {
+  name?: string | null;
+  unit_number?: string | null;
+  nozzle_number?: string | null;
+  unitNumber?: string | null;
+  nozzleNumber?: string | null;
+}): string {
+  const unitNo = unit.unit_number ?? unit.unitNumber;
+  const nozzleNo = unit.nozzle_number ?? unit.nozzleNumber;
+  if (unitNo && nozzleNo) return `Unit ${unitNo} / Nozzle ${nozzleNo}`;
+  if (unitNo) return `Unit ${unitNo}`;
+  return unit.name ?? "Unit";
+}
+
+export function buildUnitDisplayName(unitNumber: string, nozzleNumber: string): string {
+  return `Unit ${unitNumber.trim()} / Nozzle ${nozzleNumber.trim()}`;
+}
+
 export function exportToCSV(
   filename: string,
   headers: string[],

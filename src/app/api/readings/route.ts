@@ -4,6 +4,26 @@ import { prisma } from "@/lib/prisma";
 import { dec, dateStr, iso } from "@/lib/serialize";
 import { todayString } from "@/lib/utils";
 
+function serializePump(p: {
+  id: number;
+  name: string;
+  unitNumber: string | null;
+  nozzleNumber: string | null;
+  fuelType: string;
+  stationId: number | null;
+  createdAt: Date;
+}) {
+  return {
+    id: p.id,
+    name: p.name,
+    unit_number: p.unitNumber,
+    nozzle_number: p.nozzleNumber,
+    fuel_type: p.fuelType,
+    station_id: p.stationId,
+    created_at: iso(p.createdAt),
+  };
+}
+
 export async function GET(request: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
@@ -36,14 +56,9 @@ export async function GET(request: Request) {
       start_reading: dec(r.startReading),
       end_reading: dec(r.endReading),
       liters_sold: dec(r.litersSold),
+      price: r.price != null ? dec(r.price) : null,
       created_at: iso(r.createdAt),
-      pumps: {
-        id: r.pump.id,
-        name: r.pump.name,
-        fuel_type: r.pump.fuelType,
-        station_id: r.pump.stationId,
-        created_at: iso(r.pump.createdAt),
-      },
+      pumps: serializePump(r.pump),
     })),
   );
 }
@@ -56,10 +71,13 @@ export async function POST(request: Request) {
   const pumpId = parseInt(body.pump_id, 10);
   const start = parseFloat(body.start_reading);
   const end = parseFloat(body.end_reading);
+  const priceRaw = body.price;
+  const price =
+    priceRaw === "" || priceRaw == null ? null : parseFloat(priceRaw);
 
   const pump = await prisma.pump.findUnique({ where: { id: pumpId } });
   if (!pump) {
-    return NextResponse.json({ error: "Pump not found" }, { status: 404 });
+    return NextResponse.json({ error: "Unit not found" }, { status: 404 });
   }
 
   if (
@@ -76,13 +94,23 @@ export async function POST(request: Request) {
     );
   }
 
+  if (price != null && (isNaN(price) || price < 0)) {
+    return NextResponse.json(
+      { error: "Price must be a non-negative number" },
+      { status: 400 },
+    );
+  }
+
+  const readingDate = body.reading_date || todayString();
+
   const reading = await prisma.dailyReading.create({
     data: {
       pumpId,
-      readingDate: new Date(body.reading_date ?? todayString()),
+      readingDate: new Date(readingDate),
       startReading: start,
       endReading: end,
       litersSold: end - start,
+      price,
     },
     include: { pump: true },
   });
@@ -94,10 +122,8 @@ export async function POST(request: Request) {
     start_reading: dec(reading.startReading),
     end_reading: dec(reading.endReading),
     liters_sold: dec(reading.litersSold),
+    price: reading.price != null ? dec(reading.price) : null,
     created_at: iso(reading.createdAt),
-    pumps: {
-      name: reading.pump.name,
-      fuel_type: reading.pump.fuelType,
-    },
+    pumps: serializePump(reading.pump),
   });
 }

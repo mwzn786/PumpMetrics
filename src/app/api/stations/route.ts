@@ -1,7 +1,29 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { dateStr, iso } from "@/lib/serialize";
+import { iso } from "@/lib/serialize";
+
+function serializeStation(s: {
+  id: number;
+  name: string;
+  stationCode: string | null;
+  location: string | null;
+  phone: string | null;
+  managerName: string | null;
+  createdAt: Date;
+  _count: { pumps: number };
+}) {
+  return {
+    id: s.id,
+    name: s.name,
+    station_code: s.stationCode,
+    location: s.location,
+    phone: s.phone,
+    manager_name: s.managerName,
+    created_at: iso(s.createdAt),
+    pumpCount: s._count.pumps,
+  };
+}
 
 export async function GET() {
   const auth = await requireUser();
@@ -12,17 +34,7 @@ export async function GET() {
     include: { _count: { select: { pumps: true } } },
   });
 
-  return NextResponse.json(
-    stations.map((s) => ({
-      id: s.id,
-      name: s.name,
-      location: s.location,
-      phone: s.phone,
-      manager_name: s.managerName,
-      created_at: iso(s.createdAt),
-      pumpCount: s._count.pumps,
-    })),
-  );
+  return NextResponse.json(stations.map(serializeStation));
 }
 
 export async function POST(request: Request) {
@@ -36,6 +48,7 @@ export async function POST(request: Request) {
   const station = await prisma.station.create({
     data: {
       name: body.name?.trim(),
+      stationCode: body.station_code?.trim() || null,
       location: body.location?.trim() || null,
       phone: body.phone?.trim() || null,
       managerName: body.manager_name?.trim() || null,
@@ -43,13 +56,5 @@ export async function POST(request: Request) {
     include: { _count: { select: { pumps: true } } },
   });
 
-  return NextResponse.json({
-    id: station.id,
-    name: station.name,
-    location: station.location,
-    phone: station.phone,
-    manager_name: station.managerName,
-    created_at: iso(station.createdAt),
-    pumpCount: station._count.pumps,
-  });
+  return NextResponse.json(serializeStation(station));
 }

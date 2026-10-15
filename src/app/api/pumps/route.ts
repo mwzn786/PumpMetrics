@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { requireUser, resolveStationId } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import { iso } from "@/lib/serialize";
+import { buildUnitDisplayName } from "@/lib/utils";
+
+function serializePump(p: {
+  id: number;
+  name: string;
+  unitNumber: string | null;
+  nozzleNumber: string | null;
+  fuelType: string;
+  stationId: number | null;
+  createdAt: Date;
+}) {
+  return {
+    id: p.id,
+    name: p.name,
+    unit_number: p.unitNumber,
+    nozzle_number: p.nozzleNumber,
+    fuel_type: p.fuelType,
+    station_id: p.stationId,
+    created_at: iso(p.createdAt),
+  };
+}
 
 export async function GET(request: Request) {
   const auth = await requireUser();
@@ -19,18 +40,10 @@ export async function GET(request: Request) {
 
   const pumps = await prisma.pump.findMany({
     where: { stationId },
-    orderBy: { name: "asc" },
+    orderBy: [{ unitNumber: "asc" }, { nozzleNumber: "asc" }, { name: "asc" }],
   });
 
-  return NextResponse.json(
-    pumps.map((p) => ({
-      id: p.id,
-      name: p.name,
-      fuel_type: p.fuelType,
-      station_id: p.stationId,
-      created_at: iso(p.createdAt),
-    })),
-  );
+  return NextResponse.json(pumps.map(serializePump));
 }
 
 export async function POST(request: Request) {
@@ -52,21 +65,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const unitNumber = String(body.unit_number ?? "").trim();
+  const nozzleNumber = String(body.nozzle_number ?? "").trim();
+  const fuelType = String(body.fuel_type ?? body.nozzle_fuel_type ?? "").trim();
+
+  if (!unitNumber || !nozzleNumber || !fuelType) {
+    return NextResponse.json(
+      { error: "Unit number, nozzle number, and nozzle fuel type are required" },
+      { status: 400 },
+    );
+  }
+
   const pump = await prisma.pump.create({
     data: {
-      name: body.name?.trim(),
-      fuelType: body.fuel_type,
+      name: buildUnitDisplayName(unitNumber, nozzleNumber),
+      unitNumber,
+      nozzleNumber,
+      fuelType,
       stationId,
     },
   });
 
-  return NextResponse.json({
-    id: pump.id,
-    name: pump.name,
-    fuel_type: pump.fuelType,
-    station_id: pump.stationId,
-    created_at: iso(pump.createdAt),
-  });
+  return NextResponse.json(serializePump(pump));
 }
 
 export async function DELETE(request: Request) {
@@ -75,7 +95,7 @@ export async function DELETE(request: Request) {
 
   const id = parseInt(new URL(request.url).searchParams.get("id") ?? "", 10);
   if (!id) {
-    return NextResponse.json({ error: "Missing pump id" }, { status: 400 });
+    return NextResponse.json({ error: "Missing unit id" }, { status: 400 });
   }
 
   const pump = await prisma.pump.findUnique({ where: { id } });

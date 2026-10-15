@@ -255,7 +255,7 @@ export default function ReportsPage() {
           >
             network-wide report
           </button>
-          . <Link href="/stations">Manage Stations</Link>
+          . <Link href="/stations">Manage Filling Stations</Link>
         </div>
       )}
 

@@ -27,6 +27,7 @@ SET NAMES utf8mb4;
 CREATE TABLE IF NOT EXISTS stations (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     name         VARCHAR(100) NOT NULL,
+    station_code VARCHAR(50)  NULL,
     location     VARCHAR(255) NULL,
     phone        VARCHAR(20)  NULL,
     manager_name VARCHAR(100) NULL,
@@ -48,11 +49,13 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS pumps (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    name       VARCHAR(50) NOT NULL,
-    fuel_type  VARCHAR(50) NOT NULL,
-    station_id INT NULL,
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    name          VARCHAR(50) NOT NULL,
+    unit_number   VARCHAR(50) NULL,
+    nozzle_number VARCHAR(50) NULL,
+    fuel_type     VARCHAR(50) NOT NULL,
+    station_id    INT NULL,
+    created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     KEY pumps_station_id_idx (station_id),
     CONSTRAINT pumps_station_id_fkey FOREIGN KEY (station_id)
         REFERENCES stations(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS daily_readings (
     start_reading DECIMAL(10,2) NOT NULL,
     end_reading   DECIMAL(10,2) NOT NULL,
     liters_sold   DECIMAL(10,2) NOT NULL,
+    price         DECIMAL(10,2) NULL,
     created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     KEY daily_readings_pump_id_idx (pump_id),
     KEY daily_readings_reading_date_idx (reading_date),

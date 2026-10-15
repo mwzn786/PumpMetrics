@@ -11,6 +11,7 @@ export default function StationsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [stationCode, setStationCode] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [managerName, setManagerName] = useState("");
@@ -28,6 +29,7 @@ export default function StationsPage() {
 
   const resetForm = () => {
     setName("");
+    setStationCode("");
     setAddress("");
     setPhone("");
     setManagerName("");
@@ -43,6 +45,7 @@ export default function StationsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
+        station_code: stationCode.trim() || null,
         location: address.trim() || null,
         phone: phone.trim() || null,
         manager_name: managerName.trim() || null,
@@ -50,7 +53,7 @@ export default function StationsPage() {
     });
 
     if (!res.ok) {
-      setError("Failed to add station.");
+      setError("Failed to add filling station.");
     } else {
       const data = (await res.json()) as Station;
       resetForm();
@@ -78,9 +81,9 @@ export default function StationsPage() {
     <div>
       <div className="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="h3 fw-bold mb-1">Stations</h1>
+          <h1 className="h3 fw-bold mb-1">Filling Stations</h1>
           <p className="text-muted mb-0">
-            Manage locations and select your active station
+            Manage locations and select your active filling station
           </p>
         </div>
         <button
@@ -90,7 +93,7 @@ export default function StationsPage() {
           data-bs-target="#addStationModal"
         >
           <i className="bi bi-plus-lg me-1" />
-          Add Station
+          Add Filling Station
         </button>
       </div>
 
@@ -103,7 +106,7 @@ export default function StationsPage() {
       ) : stations.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <i className="bi bi-geo-alt display-4 d-block mb-3" />
-          <p>No stations yet. Add your first gas station location.</p>
+          <p>No filling stations yet. Add your first location.</p>
         </div>
       ) : (
         <div className="row g-3 g-md-4">
@@ -123,9 +126,16 @@ export default function StationsPage() {
                 >
                   <div className="card-body p-3 p-md-4 d-flex flex-column gap-3">
                     <div className="d-flex align-items-start justify-content-between gap-2">
-                      <h4 className="fw-bold mb-0 text-break station-card-title">
-                        {station.name}
-                      </h4>
+                      <div>
+                        <h4 className="fw-bold mb-0 text-break station-card-title">
+                          {station.name}
+                        </h4>
+                        {station.station_code && (
+                          <span className="badge bg-secondary-subtle text-secondary-emphasis mt-1">
+                            Code: {station.station_code}
+                          </span>
+                        )}
+                      </div>
                       {isActive && (
                         <span className="badge bg-success flex-shrink-0">
                           <i className="bi bi-check-circle me-1" />
@@ -161,7 +171,7 @@ export default function StationsPage() {
                     <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-auto pt-2 border-top">
                       <span className="badge bg-primary-subtle text-primary-emphasis station-machine-badge">
                         <i className="bi bi-fuel-pump me-1" />
-                        {machineCount} Machine{machineCount === 1 ? "" : "s"}
+                        {machineCount} Unit{machineCount === 1 ? "" : "s"}
                       </span>
                       <small className="text-muted">Tap to activate</small>
                     </div>
@@ -208,6 +218,19 @@ export default function StationsPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Downtown Station"
                     required
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="stationCode" className="form-label">
+                    Station Code
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-lg"
+                    id="stationCode"
+                    value={stationCode}
+                    onChange={(e) => setStationCode(e.target.value)}
+                    placeholder="e.g. FS-001"
                   />
                 </div>
                 <div className="mb-3">
