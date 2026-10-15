@@ -3,10 +3,8 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStation } from "@/context/StationContext";
-import type { Pump } from "@/lib/types";
-import { formatUnitNozzle } from "@/lib/utils";
-
-const FUEL_TYPES = ["Regular", "Premium", "Diesel"];
+import type { Pump, Tank } from "@/lib/types";
+import { formatNumber, formatUnitNozzle } from "@/lib/utils";
 
 function fuelBadgeClass(fuelType: string): string {
   const map: Record<string, string> = {
@@ -20,25 +18,39 @@ function fuelBadgeClass(fuelType: string): string {
 export default function UnitsPage() {
   const { activeStationId, activeStation } = useStation();
   const [units, setUnits] = useState<Pump[]>([]);
+  const [tanks, setTanks] = useState<Tank[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unitNumber, setUnitNumber] = useState("");
   const [nozzleNumber, setNozzleNumber] = useState("");
-  const [nozzleFuelType, setNozzleFuelType] = useState(FUEL_TYPES[0]);
+  const [tankId, setTankId] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const loadUnits = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!activeStationId) {
       setUnits([]);
+      setTanks([]);
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    const res = await fetch(`/api/pumps?stationId=${activeStationId}`);
-    if (res.ok) {
-      setUnits(await res.json());
+    const [unitsRes, tanksRes] = await Promise.all([
+      fetch(`/api/pumps?stationId=${activeStationId}`),
+      fetch(`/api/tanks?stationId=${activeStationId}`),
+    ]);
+
+    if (unitsRes.ok && tanksRes.ok) {
+      const loadedTanks = await tanksRes.json();
+      setUnits(await unitsRes.json());
+      setTanks(loadedTanks);
+      setTankId((current) => {
+        if (current && loadedTanks.some((t: Tank) => String(t.id) === current)) {
+          return current;
+        }
+        return loadedTanks[0] ? String(loadedTanks[0].id) : "";
+      });
       setError(null);
     } else {
       setError("Failed to load units.");
@@ -47,18 +59,20 @@ export default function UnitsPage() {
   }, [activeStationId]);
 
   useEffect(() => {
-    void loadUnits();
-  }, [loadUnits]);
+    void loadData();
+  }, [loadData]);
 
   const resetForm = () => {
     setUnitNumber("");
     setNozzleNumber("");
-    setNozzleFuelType(FUEL_TYPES[0]);
+    setTankId(tanks[0] ? String(tanks[0].id) : "");
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!unitNumber.trim() || !nozzleNumber.trim() || !activeStationId) return;
+    if (!unitNumber.trim() || !nozzleNumber.trim() || !tankId || !activeStationId) {
+      return;
+    }
 
     setSaving(true);
     const res = await fetch("/api/pumps", {
@@ -67,17 +81,18 @@ export default function UnitsPage() {
       body: JSON.stringify({
         unit_number: unitNumber.trim(),
         nozzle_number: nozzleNumber.trim(),
-        fuel_type: nozzleFuelType,
+        tank_id: parseInt(tankId, 10),
         station_id: activeStationId,
       }),
     });
 
     if (!res.ok) {
-      setError("Failed to add unit.");
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Failed to add unit.");
     } else {
       resetForm();
       setError(null);
-      await loadUnits();
+      await loadData();
 
       const modalEl = modalRef.current;
       if (modalEl) {
@@ -100,6 +115,8 @@ export default function UnitsPage() {
       setUnits((prev) => prev.filter((u) => u.id !== id));
     }
   };
+
+  const selectedTank = tanks.find((t) => String(t.id) === tankId);
 
   if (!activeStationId) {
     return (
@@ -129,11 +146,19 @@ export default function UnitsPage() {
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#addUnitModal"
+          disabled={tanks.length === 0}
         >
           <i className="bi bi-plus-lg me-1" />
           Add Unit
         </button>
       </div>
+
+      {tanks.length === 0 && !loading && (
+        <div className="alert alert-warning">
+          Add a tank first so nozzles can draw supply.{" "}
+          <Link href="/tanks">Go to Tanks</Link>
+        </div>
+      )}
 
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -172,6 +197,22 @@ export default function UnitsPage() {
                         <span className={`badge ${fuelBadgeClass(unit.fuel_type)}`}>
                           {unit.fuel_type}
                         </span>
+                        {unit.tank && (
+                          <div className="small text-muted mt-2">
+                            <span
+                              className="rounded-circle border me-1"
+                              style={{
+                                width: 10,
+                                height: 10,
+                                backgroundColor: unit.tank.color,
+                                display: "inline-block",
+                              }}
+                            />
+                            Tank {unit.tank.code} — {unit.tank.name}
+                            <br />
+                            Stock: {formatNumber(unit.tank.current_stock)} L
+                          </div>
+                        )}
                       </div>
                       <i className="bi bi-fuel-pump fs-2 text-primary opacity-50" />
                     </div>
@@ -233,26 +274,32 @@ export default function UnitsPage() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Nozzle Fuel Type</label>
+                  <label className="form-label">Supply Tank</label>
                   <select
                     className="form-select form-select-lg"
-                    value={nozzleFuelType}
-                    onChange={(e) => setNozzleFuelType(e.target.value)}
+                    value={tankId}
+                    onChange={(e) => setTankId(e.target.value)}
                     required
                   >
-                    {FUEL_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
+                    {tanks.map((tank) => (
+                      <option key={tank.id} value={tank.id}>
+                        {tank.code} — {tank.name} ({tank.fuel_type})
                       </option>
                     ))}
                   </select>
+                  {selectedTank && (
+                    <div className="form-text">
+                      Nozzle fuel type will be{" "}
+                      <strong>{selectedTank.fuel_type}</strong> from this tank.
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
+                <button type="submit" className="btn btn-primary" disabled={saving || !tankId}>
                   {saving ? "Saving..." : "Add Unit"}
                 </button>
               </div>

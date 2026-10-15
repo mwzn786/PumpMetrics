@@ -128,7 +128,8 @@ export default function ReadingsPage() {
     });
 
     if (!res.ok) {
-      setError("Failed to save reading.");
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Failed to save reading.");
     } else {
       setStartReading("");
       setEndReading("");

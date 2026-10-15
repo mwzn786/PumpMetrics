@@ -5,14 +5,14 @@ import Link from "next/link";
 import KPICard from "@/components/KPICard";
 import { FuelSalesChart, ProductMixChart } from "@/components/Charts";
 import { useStation } from "@/context/StationContext";
-import type { FuelInventory } from "@/lib/types";
+import type { Tank } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { activeStationId, activeStation } = useStation();
   const [fuelSoldToday, setFuelSoldToday] = useState(0);
   const [storeIncomeToday, setStoreIncomeToday] = useState(0);
-  const [inventory, setInventory] = useState<FuelInventory[]>([]);
+  const [tanks, setTanks] = useState<Tank[]>([]);
   const [weeklyLabels, setWeeklyLabels] = useState<string[]>([]);
   const [weeklyData, setWeeklyData] = useState<number[]>([]);
   const [mixLabels, setMixLabels] = useState<string[]>([]);
@@ -39,7 +39,7 @@ export default function DashboardPage() {
     const data = await res.json();
     setFuelSoldToday(data.fuelSoldToday);
     setStoreIncomeToday(data.storeIncomeToday);
-    setInventory(data.inventory);
+    setTanks(data.tanks ?? []);
     setWeeklyLabels(data.weeklyLabels);
     setWeeklyData(data.weeklyData);
     setMixLabels(data.mixLabels);
@@ -51,8 +51,8 @@ export default function DashboardPage() {
     void loadDashboard();
   }, [loadDashboard]);
 
-  const totalStock = inventory.reduce(
-    (sum, item) => sum + Number(item.current_stock),
+  const totalStock = tanks.reduce(
+    (sum, tank) => sum + Number(tank.current_stock),
     0,
   );
 
@@ -108,11 +108,11 @@ export default function DashboardPage() {
               variant="success"
             />
             <KPICard
-              title="Current Fuel Stock"
+              title="Current Tank Stock"
               value={`${formatNumber(totalStock)} L`}
               icon="bi-database-fill"
               variant="warning"
-              subtitle={`${inventory.length} fuel type(s) tracked`}
+              subtitle={`${tanks.length} tank(s) tracked`}
             />
           </div>
 
@@ -145,25 +145,77 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {inventory.length > 0 && (
-            <div className="card border-0 shadow-sm mt-4">
-              <div className="card-body">
-                <h5 className="card-title fw-semibold mb-3">Tank Levels</h5>
-                <div className="row g-3">
-                  {inventory.map((item) => (
-                    <div key={item.id} className="col-12 col-md-4">
-                      <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                        <span className="fw-medium">{item.fuel_type}</span>
-                        <span className="badge bg-primary fs-6">
-                          {formatNumber(Number(item.current_stock))} L
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          <div className="card border-0 shadow-sm mt-4">
+            <div className="card-body">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h5 className="card-title fw-semibold mb-0">Tank Stock</h5>
+                <Link href="/tanks" className="btn btn-sm btn-outline-primary">
+                  Manage Tanks
+                </Link>
               </div>
+              {tanks.length === 0 ? (
+                <p className="text-muted mb-0">
+                  No tanks yet.{" "}
+                  <Link href="/tanks">Add a tank</Link> to track stock levels.
+                </p>
+              ) : (
+                <div className="row g-3">
+                  {tanks.map((tank) => {
+                    const pct =
+                      tank.max_capacity > 0
+                        ? Math.min(
+                            100,
+                            (Number(tank.current_stock) /
+                              Number(tank.max_capacity)) *
+                              100,
+                          )
+                        : 0;
+                    return (
+                      <div key={tank.id} className="col-12 col-md-6 col-xl-4">
+                        <div className="p-3 bg-light rounded h-100">
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <span
+                              className="rounded-circle border"
+                              style={{
+                                width: 14,
+                                height: 14,
+                                backgroundColor: tank.color,
+                                display: "inline-block",
+                              }}
+                            />
+                            <span className="fw-medium">{tank.name}</span>
+                            <span className="badge bg-secondary-subtle text-secondary-emphasis">
+                              {tank.code}
+                            </span>
+                          </div>
+                          <div className="d-flex justify-content-between small mb-1">
+                            <span className="text-muted">{tank.fuel_type}</span>
+                            <strong>
+                              {formatNumber(Number(tank.current_stock))} /{" "}
+                              {formatNumber(Number(tank.max_capacity))} L
+                            </strong>
+                          </div>
+                          <div className="progress" style={{ height: 8 }}>
+                            <div
+                              className="progress-bar"
+                              role="progressbar"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: tank.color,
+                              }}
+                              aria-valuenow={pct}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

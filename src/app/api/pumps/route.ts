@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser, resolveStationId } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import { iso } from "@/lib/serialize";
+import { dec, iso } from "@/lib/serialize";
 import { buildUnitDisplayName } from "@/lib/utils";
 
 function serializePump(p: {
@@ -11,7 +11,16 @@ function serializePump(p: {
   nozzleNumber: string | null;
   fuelType: string;
   stationId: number | null;
+  tankId: number | null;
   createdAt: Date;
+  tank?: {
+    id: number;
+    code: string;
+    name: string;
+    fuelType: string;
+    color: string;
+    currentStock: { toString(): string } | number;
+  } | null;
 }) {
   return {
     id: p.id,
@@ -20,7 +29,18 @@ function serializePump(p: {
     nozzle_number: p.nozzleNumber,
     fuel_type: p.fuelType,
     station_id: p.stationId,
+    tank_id: p.tankId,
     created_at: iso(p.createdAt),
+    tank: p.tank
+      ? {
+          id: p.tank.id,
+          code: p.tank.code,
+          name: p.tank.name,
+          fuel_type: p.tank.fuelType,
+          color: p.tank.color,
+          current_stock: dec(p.tank.currentStock as never),
+        }
+      : null,
   };
 }
 
@@ -40,6 +60,7 @@ export async function GET(request: Request) {
 
   const pumps = await prisma.pump.findMany({
     where: { stationId },
+    include: { tank: true },
     orderBy: [{ unitNumber: "asc" }, { nozzleNumber: "asc" }, { name: "asc" }],
   });
 
@@ -67,11 +88,26 @@ export async function POST(request: Request) {
 
   const unitNumber = String(body.unit_number ?? "").trim();
   const nozzleNumber = String(body.nozzle_number ?? "").trim();
-  const fuelType = String(body.fuel_type ?? body.nozzle_fuel_type ?? "").trim();
+  const tankId = parseInt(body.tank_id, 10);
 
-  if (!unitNumber || !nozzleNumber || !fuelType) {
+  if (!unitNumber || !nozzleNumber) {
     return NextResponse.json(
-      { error: "Unit number, nozzle number, and nozzle fuel type are required" },
+      { error: "Unit number and nozzle number are required" },
+      { status: 400 },
+    );
+  }
+
+  if (!tankId) {
+    return NextResponse.json(
+      { error: "Supply tank is required" },
+      { status: 400 },
+    );
+  }
+
+  const tank = await prisma.tank.findUnique({ where: { id: tankId } });
+  if (!tank || tank.stationId !== stationId) {
+    return NextResponse.json(
+      { error: "Tank not found at this station" },
       { status: 400 },
     );
   }
@@ -81,9 +117,11 @@ export async function POST(request: Request) {
       name: buildUnitDisplayName(unitNumber, nozzleNumber),
       unitNumber,
       nozzleNumber,
-      fuelType,
+      fuelType: tank.fuelType,
       stationId,
+      tankId: tank.id,
     },
+    include: { tank: true },
   });
 
   return NextResponse.json(serializePump(pump));

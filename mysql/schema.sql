@@ -48,6 +48,22 @@ CREATE TABLE IF NOT EXISTS users (
         REFERENCES stations(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS tanks (
+    id             INT AUTO_INCREMENT PRIMARY KEY,
+    code           VARCHAR(50) NOT NULL,
+    name           VARCHAR(100) NOT NULL,
+    fuel_type      VARCHAR(50) NOT NULL,
+    color          VARCHAR(20) NOT NULL,
+    max_capacity   DECIMAL(12,2) NOT NULL,
+    current_stock  DECIMAL(12,2) NOT NULL,
+    station_id     INT NOT NULL,
+    created_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    updated_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    KEY tanks_station_id_idx (station_id),
+    CONSTRAINT tanks_station_id_fkey FOREIGN KEY (station_id)
+        REFERENCES stations(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS pumps (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     name          VARCHAR(50) NOT NULL,
@@ -55,10 +71,14 @@ CREATE TABLE IF NOT EXISTS pumps (
     nozzle_number VARCHAR(50) NULL,
     fuel_type     VARCHAR(50) NOT NULL,
     station_id    INT NULL,
+    tank_id       INT NULL,
     created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     KEY pumps_station_id_idx (station_id),
+    KEY pumps_tank_id_idx (tank_id),
     CONSTRAINT pumps_station_id_fkey FOREIGN KEY (station_id)
-        REFERENCES stations(id) ON DELETE CASCADE ON UPDATE CASCADE
+        REFERENCES stations(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT pumps_tank_id_fkey FOREIGN KEY (tank_id)
+        REFERENCES tanks(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS daily_readings (

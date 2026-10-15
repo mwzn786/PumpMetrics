@@ -11,7 +11,16 @@ function serializePump(p: {
   nozzleNumber: string | null;
   fuelType: string;
   stationId: number | null;
+  tankId?: number | null;
   createdAt: Date;
+  tank?: {
+    id: number;
+    code: string;
+    name: string;
+    fuelType: string;
+    color: string;
+    currentStock: { toString(): string } | number;
+  } | null;
 }) {
   return {
     id: p.id,
@@ -20,7 +29,18 @@ function serializePump(p: {
     nozzle_number: p.nozzleNumber,
     fuel_type: p.fuelType,
     station_id: p.stationId,
+    tank_id: p.tankId ?? null,
     created_at: iso(p.createdAt),
+    tank: p.tank
+      ? {
+          id: p.tank.id,
+          code: p.tank.code,
+          name: p.tank.name,
+          fuel_type: p.tank.fuelType,
+          color: p.tank.color,
+          current_stock: dec(p.tank.currentStock as never),
+        }
+      : null,
   };
 }
 
@@ -44,7 +64,7 @@ export async function GET(request: Request) {
       readingDate: new Date(date),
       pump: { stationId },
     },
-    include: { pump: true },
+    include: { pump: { include: { tank: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -75,7 +95,10 @@ export async function POST(request: Request) {
   const price =
     priceRaw === "" || priceRaw == null ? null : parseFloat(priceRaw);
 
-  const pump = await prisma.pump.findUnique({ where: { id: pumpId } });
+  const pump = await prisma.pump.findUnique({
+    where: { id: pumpId },
+    include: { tank: true },
+  });
   if (!pump) {
     return NextResponse.json({ error: "Unit not found" }, { status: 404 });
   }
@@ -101,18 +124,52 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!pump.tankId || !pump.tank) {
+    return NextResponse.json(
+      {
+        error:
+          "This nozzle has no supply tank. Link a tank on the Units page first.",
+      },
+      { status: 400 },
+    );
+  }
+
+  const litersSold = end - start;
+  const available = dec(pump.tank.currentStock);
+  if (litersSold > available) {
+    return NextResponse.json(
+      {
+        error: `Insufficient tank stock. Available: ${available.toFixed(2)} L, required: ${litersSold.toFixed(2)} L.`,
+      },
+      { status: 400 },
+    );
+  }
+
   const readingDate = body.reading_date || todayString();
 
-  const reading = await prisma.dailyReading.create({
-    data: {
-      pumpId,
-      readingDate: new Date(readingDate),
-      startReading: start,
-      endReading: end,
-      litersSold: end - start,
-      price,
-    },
-    include: { pump: true },
+  const reading = await prisma.$transaction(async (tx) => {
+    const created = await tx.dailyReading.create({
+      data: {
+        pumpId,
+        readingDate: new Date(readingDate),
+        startReading: start,
+        endReading: end,
+        litersSold,
+        price,
+      },
+      include: { pump: { include: { tank: true } } },
+    });
+
+    await tx.tank.update({
+      where: { id: pump.tankId! },
+      data: {
+        currentStock: {
+          decrement: litersSold,
+        },
+      },
+    });
+
+    return created;
   });
 
   return NextResponse.json({

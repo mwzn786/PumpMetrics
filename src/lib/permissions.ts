@@ -28,6 +28,7 @@ type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: "bi-speedometer2", roles: ["super_admin", "station_manager"] },
   { href: "/stations", label: "Filling Stations", icon: "bi-geo-alt", roles: ["super_admin"] },
+  { href: "/tanks", label: "Tanks", icon: "bi-droplet-half", roles: ["super_admin", "station_manager"] },
   { href: "/pumps", label: "Units", icon: "bi-fuel-pump", roles: ["super_admin", "station_manager"] },
   { href: "/readings", label: "Readings", icon: "bi-journal-text", roles: ["super_admin", "station_manager", "cashier"] },
   { href: "/reports", label: "Reports", icon: "bi-bar-chart-line", roles: ["super_admin", "station_manager"] },
@@ -37,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
 export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/": ["super_admin", "station_manager"],
   "/stations": ["super_admin"],
+  "/tanks": ["super_admin", "station_manager"],
   "/pumps": ["super_admin", "station_manager"],
   "/readings": ["super_admin", "station_manager", "cashier"],
   "/reports": ["super_admin", "station_manager"],

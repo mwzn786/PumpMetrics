@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       fuelSoldToday: 0,
       storeIncomeToday: 0,
-      inventory: [],
+      tanks: [],
       weeklyLabels: getLast7Days(),
       weeklyData: getLast7Days().map(() => 0),
       mixLabels: [],
@@ -29,36 +29,34 @@ export async function GET(request: Request) {
   const today = todayString();
   const last7 = getLast7Days();
 
-  const [todayReadings, todaySales, inventory, weekReadings] = await Promise.all(
-    [
-      prisma.dailyReading.findMany({
-        where: {
-          readingDate: new Date(today),
-          pump: { stationId },
+  const [todayReadings, todaySales, tanks, weekReadings] = await Promise.all([
+    prisma.dailyReading.findMany({
+      where: {
+        readingDate: new Date(today),
+        pump: { stationId },
+      },
+    }),
+    prisma.storeSale.findMany({
+      where: {
+        saleDate: new Date(today),
+        stationId,
+      },
+    }),
+    prisma.tank.findMany({
+      where: { stationId },
+      orderBy: [{ code: "asc" }, { name: "asc" }],
+    }),
+    prisma.dailyReading.findMany({
+      where: {
+        readingDate: {
+          gte: new Date(last7[0]),
+          lte: new Date(last7[last7.length - 1]),
         },
-      }),
-      prisma.storeSale.findMany({
-        where: {
-          saleDate: new Date(today),
-          stationId,
-        },
-      }),
-      prisma.fuelInventory.findMany({
-        where: { stationId },
-        orderBy: { fuelType: "asc" },
-      }),
-      prisma.dailyReading.findMany({
-        where: {
-          readingDate: {
-            gte: new Date(last7[0]),
-            lte: new Date(last7[last7.length - 1]),
-          },
-          pump: { stationId },
-        },
-        include: { pump: true },
-      }),
-    ],
-  );
+        pump: { stationId },
+      },
+      include: { pump: true },
+    }),
+  ]);
 
   const fuelSoldToday = todayReadings.reduce(
     (sum, r) => sum + dec(r.litersSold),
@@ -84,18 +82,17 @@ export async function GET(request: Request) {
   return NextResponse.json({
     fuelSoldToday,
     storeIncomeToday,
-    inventory: inventory.map((i) => ({
-      id: i.id,
-      fuel_type: i.fuelType,
-      current_stock: dec(i.currentStock),
-      station_id: i.stationId,
-      last_delivery_date: i.lastDeliveryDate
-        ? dateStr(i.lastDeliveryDate)
-        : null,
-      last_delivery_amount: i.lastDeliveryAmount
-        ? dec(i.lastDeliveryAmount)
-        : null,
-      updated_at: iso(i.updatedAt),
+    tanks: tanks.map((t) => ({
+      id: t.id,
+      code: t.code,
+      name: t.name,
+      fuel_type: t.fuelType,
+      color: t.color,
+      max_capacity: dec(t.maxCapacity),
+      current_stock: dec(t.currentStock),
+      station_id: t.stationId,
+      created_at: iso(t.createdAt),
+      updated_at: iso(t.updatedAt),
     })),
     weeklyLabels: last7,
     weeklyData: dailyTotals,

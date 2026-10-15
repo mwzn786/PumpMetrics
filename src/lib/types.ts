@@ -21,6 +21,19 @@ export type Station = {
   pumpCount?: number;
 };
 
+export type Tank = {
+  id: number;
+  code: string;
+  name: string;
+  fuel_type: string;
+  color: string;
+  max_capacity: number;
+  current_stock: number;
+  station_id: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Pump = {
   id: number;
   name: string;
@@ -28,7 +41,9 @@ export type Pump = {
   nozzle_number: string | null;
   fuel_type: string;
   station_id: number | null;
+  tank_id: number | null;
   created_at: string;
+  tank?: Pick<Tank, "id" | "code" | "name" | "fuel_type" | "color" | "current_stock"> | null;
 };
 
 export type DailyReading = {
