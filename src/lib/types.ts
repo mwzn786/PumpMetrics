@@ -24,6 +24,7 @@ export type Pump = {
   id: number;
   name: string;
   fuel_type: string;
+  branch_code: string | null;
   station_id: number | null;
   created_at: string;
 };

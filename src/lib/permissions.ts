@@ -27,8 +27,8 @@ type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: "bi-speedometer2", roles: ["super_admin", "station_manager"] },
-  { href: "/stations", label: "Stations", icon: "bi-geo-alt", roles: ["super_admin"] },
-  { href: "/pumps", label: "Pumps", icon: "bi-fuel-pump", roles: ["super_admin", "station_manager"] },
+  { href: "/stations", label: "Filling Stations", icon: "bi-geo-alt", roles: ["super_admin"] },
+  { href: "/pumps", label: "Units", icon: "bi-fuel-pump", roles: ["super_admin", "station_manager"] },
   { href: "/readings", label: "Readings", icon: "bi-journal-text", roles: ["super_admin", "station_manager", "cashier"] },
   { href: "/reports", label: "Reports", icon: "bi-bar-chart-line", roles: ["super_admin", "station_manager"] },
   { href: "/users", label: "Users", icon: "bi-people", roles: ["super_admin"] },

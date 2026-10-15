@@ -23,6 +23,7 @@ export default function PumpsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [branchCode, setBranchCode] = useState("");
   const [fuelType, setFuelType] = useState(FUEL_TYPES[0]);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +40,7 @@ export default function PumpsPage() {
       setPumps(await res.json());
       setError(null);
     } else {
-      setError("Failed to load pumps.");
+      setError("Failed to load units.");
     }
     setLoading(false);
   }, [activeStationId]);
@@ -59,14 +60,16 @@ export default function PumpsPage() {
       body: JSON.stringify({
         name: name.trim(),
         fuel_type: fuelType,
+        branch_code: branchCode.trim() || null,
         station_id: activeStationId,
       }),
     });
 
     if (!res.ok) {
-      setError("Failed to add pump.");
+      setError("Failed to add unit.");
     } else {
       setName("");
+      setBranchCode("");
       setFuelType(FUEL_TYPES[0]);
       setError(null);
       await loadPumps();
@@ -81,13 +84,13 @@ export default function PumpsPage() {
   };
 
   const handleDelete = async (id: number, pumpName: string) => {
-    if (!confirm(`Delete pump "${pumpName}"? This will also remove its readings.`)) {
+    if (!confirm(`Delete unit "${pumpName}"? This will also remove its readings.`)) {
       return;
     }
 
     const res = await fetch(`/api/pumps?id=${id}`, { method: "DELETE" });
     if (!res.ok) {
-      setError("Failed to delete pump.");
+      setError("Failed to delete unit.");
     } else {
       setPumps((prev) => prev.filter((p) => p.id !== id));
     }
@@ -97,11 +100,11 @@ export default function PumpsPage() {
     return (
       <div>
         <div className="page-header">
-          <h1 className="h3 fw-bold mb-1">Pumps</h1>
+          <h1 className="h3 fw-bold mb-1">Units</h1>
         </div>
         <div className="alert alert-info">
-          Select or create a station first.{" "}
-          <Link href="/stations">Go to Stations</Link>
+          Select or create a filling station first.{" "}
+          <Link href="/stations">Go to Filling Stations</Link>
         </div>
       </div>
     );
@@ -111,7 +114,7 @@ export default function PumpsPage() {
     <div>
       <div className="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="h3 fw-bold mb-1">Pumps</h1>
+          <h1 className="h3 fw-bold mb-1">Units</h1>
           <p className="text-muted mb-0">
             Machines at <strong>{activeStation?.name}</strong>
           </p>
@@ -123,7 +126,7 @@ export default function PumpsPage() {
           data-bs-target="#addPumpModal"
         >
           <i className="bi bi-plus-lg me-1" />
-          Add Pump
+          Add Unit
         </button>
       </div>
 
@@ -136,7 +139,7 @@ export default function PumpsPage() {
       ) : pumps.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <i className="bi bi-fuel-pump display-4 d-block mb-3" />
-          <p>No pumps at this station yet. Add your first machine.</p>
+          <p>No units at this filling station yet. Add your first machine.</p>
         </div>
       ) : (
         <div className="row g-3">
@@ -150,6 +153,11 @@ export default function PumpsPage() {
                       <span className={`badge ${fuelBadgeClass(pump.fuel_type)}`}>
                         {pump.fuel_type}
                       </span>
+                      {pump.branch_code && (
+                        <div className="text-muted small mt-2">
+                          Branch: {pump.branch_code}
+                        </div>
+                      )}
                     </div>
                     <i className="bi bi-fuel-pump fs-2 text-primary opacity-50" />
                   </div>
@@ -178,7 +186,7 @@ export default function PumpsPage() {
           <div className="modal-content">
             <form onSubmit={(e) => void handleSubmit(e)}>
               <div className="modal-header">
-                <h5 className="modal-title">Add New Pump</h5>
+                <h5 className="modal-title">Add New Unit</h5>
                 <button type="button" className="btn-close" data-bs-dismiss="modal" />
               </div>
               <div className="modal-body">
@@ -188,8 +196,11 @@ export default function PumpsPage() {
                   </small>
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Pump Name / ID</label>
+                  <label className="form-label" htmlFor="unitName">
+                    Unit Name / ID
+                  </label>
                   <input
+                    id="unitName"
                     type="text"
                     className="form-control form-control-lg"
                     value={name}
@@ -198,8 +209,24 @@ export default function PumpsPage() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Fuel Type</label>
+                  <label className="form-label" htmlFor="branchCode">
+                    Branch Code
+                  </label>
+                  <input
+                    id="branchCode"
+                    type="text"
+                    className="form-control form-control-lg"
+                    value={branchCode}
+                    onChange={(e) => setBranchCode(e.target.value)}
+                    placeholder="e.g. BR-001"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="fuelType">
+                    Fuel Type
+                  </label>
                   <select
+                    id="fuelType"
                     className="form-select form-select-lg"
                     value={fuelType}
                     onChange={(e) => setFuelType(e.target.value)}
@@ -217,7 +244,7 @@ export default function PumpsPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Add Pump"}
+                  {saving ? "Saving..." : "Add Unit"}
                 </button>
               </div>
             </form>

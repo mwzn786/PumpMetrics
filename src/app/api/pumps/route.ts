@@ -27,6 +27,7 @@ export async function GET(request: Request) {
       id: p.id,
       name: p.name,
       fuel_type: p.fuelType,
+      branch_code: p.branchCode,
       station_id: p.stationId,
       created_at: iso(p.createdAt),
     })),
@@ -52,10 +53,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const branchCode =
+    typeof body.branch_code === "string"
+      ? body.branch_code.trim()
+      : typeof body.branchCode === "string"
+        ? body.branchCode.trim()
+        : "";
+
   const pump = await prisma.pump.create({
     data: {
       name: body.name?.trim(),
       fuelType: body.fuel_type,
+      branchCode: branchCode || null,
       stationId,
     },
   });
@@ -64,6 +73,7 @@ export async function POST(request: Request) {
     id: pump.id,
     name: pump.name,
     fuel_type: pump.fuelType,
+    branch_code: pump.branchCode,
     station_id: pump.stationId,
     created_at: iso(pump.createdAt),
   });

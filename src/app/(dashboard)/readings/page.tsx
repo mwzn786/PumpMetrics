@@ -132,8 +132,8 @@ export default function ReadingsPage() {
           <h1 className="h3 fw-bold mb-1">Daily Readings</h1>
         </div>
         <div className="alert alert-info">
-          Select or create a station first.{" "}
-          <Link href="/stations">Go to Stations</Link>
+          Select or create a filling station first.{" "}
+          <Link href="/stations">Go to Filling Stations</Link>
         </div>
       </div>
     );
@@ -157,14 +157,14 @@ export default function ReadingsPage() {
 
           {pumps.length === 0 ? (
             <p className="text-muted mb-0">
-              No pumps at this station.{" "}
-              <Link href="/pumps">Add a pump</Link> first.
+              No units at this filling station.{" "}
+              <Link href="/pumps">Add a unit</Link> first.
             </p>
           ) : (
             <form onSubmit={(e) => void handleSubmit(e)}>
               <div className="row g-3">
                 <div className="col-12 col-md-4">
-                  <label className="form-label">Pump</label>
+                  <label className="form-label">Unit</label>
                   <select
                     className="form-select form-select-lg"
                     value={pumpId}
