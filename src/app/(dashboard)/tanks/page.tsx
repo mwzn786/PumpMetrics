@@ -3,10 +3,10 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStation } from "@/context/StationContext";
+import { FUEL_TYPES } from "@/lib/fuel";
 import type { Tank } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 
-const FUEL_TYPES = ["Regular", "Premium", "Diesel"];
 const DEFAULT_COLORS = ["#0d6efd", "#198754", "#dc3545", "#fd7e14", "#6f42c1", "#20c997"];
 
 export default function TanksPage() {
@@ -17,7 +17,7 @@ export default function TanksPage() {
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [fuelType, setFuelType] = useState(FUEL_TYPES[0]);
+  const [fuelType, setFuelType] = useState<string>(FUEL_TYPES[0]);
   const [color, setColor] = useState(DEFAULT_COLORS[0]);
   const [maxCapacity, setMaxCapacity] = useState("");
   const [currentStock, setCurrentStock] = useState("");
@@ -250,7 +250,7 @@ export default function TanksPage() {
                     className="form-control form-control-lg"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Regular Main Tank"
+                    placeholder="e.g. Regular Petrol Main Tank"
                     required
                   />
                 </div>

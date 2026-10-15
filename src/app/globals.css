@@ -261,6 +261,31 @@ body {
   background-color: #198754;
 }
 
+.stock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.stock-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.stock-chip-value {
+  font-weight: 700;
+}
+
 .page-header {
   margin-bottom: 24px;
 }

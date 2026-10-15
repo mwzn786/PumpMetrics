@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import KPICard from "@/components/KPICard";
 import { FuelSalesChart, ProductMixChart } from "@/components/Charts";
 import { useStation } from "@/context/StationContext";
+import { FUEL_TYPES, fuelChipVariant } from "@/lib/fuel";
 import type { Tank } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 
@@ -56,6 +57,19 @@ export default function DashboardPage() {
     0,
   );
 
+  const stockByType = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const type of FUEL_TYPES) totals.set(type, 0);
+    for (const tank of tanks) {
+      const key = tank.fuel_type || "Other";
+      totals.set(key, (totals.get(key) ?? 0) + Number(tank.current_stock));
+    }
+    return Array.from(totals.entries()).map(([fuelType, stock]) => ({
+      fuelType,
+      stock,
+    }));
+  }, [tanks]);
+
   if (!activeStationId) {
     return (
       <div>
@@ -94,7 +108,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="row g-3 mb-4">
+          <div className="row g-3 mb-3">
             <KPICard
               title="Total Fuel Sold Today"
               value={`${formatNumber(fuelSoldToday)} L`}
@@ -114,6 +128,40 @@ export default function DashboardPage() {
               variant="warning"
               subtitle={`${tanks.length} tank(s) tracked`}
             />
+          </div>
+
+          <div className="d-flex flex-wrap gap-2 mb-4">
+            {stockByType.map(({ fuelType, stock }) => {
+              const variant = fuelChipVariant(fuelType);
+              return (
+                <div key={fuelType} className="stock-chip">
+                  <span className={`badge text-bg-${variant}`}>{fuelType}</span>
+                  <span className="stock-chip-value">
+                    {formatNumber(stock)} L
+                  </span>
+                </div>
+              );
+            })}
+            {tanks.map((tank) => (
+              <div key={tank.id} className="stock-chip" title={tank.name}>
+                <span
+                  className="stock-chip-dot"
+                  style={{ backgroundColor: tank.color }}
+                />
+                <span className="text-muted">
+                  {tank.code} · {tank.fuel_type}
+                </span>
+                <span className="stock-chip-value">
+                  {formatNumber(Number(tank.current_stock))} L
+                </span>
+              </div>
+            ))}
+            {tanks.length === 0 && (
+              <span className="text-muted small align-self-center">
+                No tank stock chips yet —{" "}
+                <Link href="/tanks">add a tank</Link>
+              </span>
+            )}
           </div>
 
           <div className="row g-3">

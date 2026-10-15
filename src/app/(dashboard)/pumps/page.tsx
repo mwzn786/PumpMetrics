@@ -3,17 +3,9 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStation } from "@/context/StationContext";
+import { fuelBadgeClass } from "@/lib/fuel";
 import type { Pump, Tank } from "@/lib/types";
 import { formatNumber, formatUnitNozzle } from "@/lib/utils";
-
-function fuelBadgeClass(fuelType: string): string {
-  const map: Record<string, string> = {
-    Regular: "fuel-badge-regular",
-    Premium: "fuel-badge-premium",
-    Diesel: "fuel-badge-diesel",
-  };
-  return map[fuelType] ?? "bg-secondary";
-}
 
 export default function UnitsPage() {
   const { activeStationId, activeStation } = useStation();
