@@ -42,13 +42,14 @@ model Station {
 }
 
 model Pump {
-  id        Int            @id @default(autoincrement())
-  name      String         @db.VarChar(50)
-  fuelType  String         @map("fuel_type") @db.VarChar(50)
-  stationId Int?           @map("station_id")
-  station   Station?       @relation(fields: [stationId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now()) @map("created_at")
-  readings  DailyReading[]
+  id         Int            @id @default(autoincrement())
+  name       String         @db.VarChar(50)
+  fuelType   String         @map("fuel_type") @db.VarChar(50)
+  branchCode String?        @map("branch_code") @db.VarChar(50)
+  stationId  Int?           @map("station_id")
+  station    Station?       @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  readings   DailyReading[]
 
   @@map("pumps")
 }

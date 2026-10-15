@@ -33,7 +33,7 @@ export default function StationSelector() {
 
   if (stations.length === 0) {
     return (
-      <span className="badge bg-warning text-dark">No stations</span>
+      <span className="badge bg-warning text-dark">No filling stations</span>
     );
   }
 
@@ -47,7 +47,7 @@ export default function StationSelector() {
       >
         <i className="bi bi-geo-alt-fill" />
         <span className="station-selector-label text-truncate">
-          {activeStation?.name ?? "Select Station"}
+          {activeStation?.name ?? "Select Filling Station"}
         </span>
       </button>
       <ul className="dropdown-menu dropdown-menu-end shadow">

@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         id: r.pump.id,
         name: r.pump.name,
         fuel_type: r.pump.fuelType,
+        branch_code: r.pump.branchCode,
         station_id: r.pump.stationId,
         created_at: iso(r.pump.createdAt),
       },
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
     pumps: {
       name: reading.pump.name,
       fuel_type: reading.pump.fuelType,
+      branch_code: reading.pump.branchCode,
     },
   });
 }

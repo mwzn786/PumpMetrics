@@ -226,7 +226,7 @@ export default function ReportsPage() {
 
   const networkWideTabs = ["executive", "managers", "directory"];
   const tabs = [
-    { id: "executive", label: "All Stations" },
+    { id: "executive", label: "All Filling Stations" },
     { id: "managers", label: "Manager Board" },
     { id: "directory", label: "Directory" },
     { id: "fuel", label: "Fuel Sales" },
@@ -255,7 +255,7 @@ export default function ReportsPage() {
           >
             network-wide report
           </button>
-          . <Link href="/stations">Manage Stations</Link>
+          . <Link href="/stations">Manage Filling Stations</Link>
         </div>
       )}
 
@@ -303,7 +303,7 @@ export default function ReportsPage() {
                   <ExportButtons onExportCSV={exportExecutiveCSV} />
                 </div>
                 {executiveSummary.length === 0 ? (
-                  <p className="text-muted">No stations configured yet.</p>
+                  <p className="text-muted">No filling stations configured yet.</p>
                 ) : (
                   <div className="table-responsive">
                     <table className="table table-hover align-middle">
@@ -396,7 +396,7 @@ export default function ReportsPage() {
                   <ExportButtons onExportCSV={exportDirectoryCSV} />
                 </div>
                 {stationDirectory.length === 0 ? (
-                  <p className="text-muted">No stations in directory.</p>
+                  <p className="text-muted">No filling stations in directory.</p>
                 ) : (
                   <div className="table-responsive">
                     <table className="table table-bordered align-middle directory-table">

@@ -78,9 +78,9 @@ export default function StationsPage() {
     <div>
       <div className="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-          <h1 className="h3 fw-bold mb-1">Stations</h1>
+          <h1 className="h3 fw-bold mb-1">Filling Stations</h1>
           <p className="text-muted mb-0">
-            Manage locations and select your active station
+            Manage locations and select your active filling station
           </p>
         </div>
         <button
@@ -90,7 +90,7 @@ export default function StationsPage() {
           data-bs-target="#addStationModal"
         >
           <i className="bi bi-plus-lg me-1" />
-          Add Station
+          Add Filling Station
         </button>
       </div>
 
@@ -103,7 +103,7 @@ export default function StationsPage() {
       ) : stations.length === 0 ? (
         <div className="text-center py-5 text-muted">
           <i className="bi bi-geo-alt display-4 d-block mb-3" />
-          <p>No stations yet. Add your first gas station location.</p>
+          <p>No filling stations yet. Add your first gas station location.</p>
         </div>
       ) : (
         <div className="row g-3 g-md-4">
@@ -186,7 +186,7 @@ export default function StationsPage() {
             <form onSubmit={(e) => void handleSubmit(e)}>
               <div className="modal-header">
                 <h5 className="modal-title" id="addStationModalLabel">
-                  Add New Station
+                  Add New Filling Station
                 </h5>
                 <button
                   type="button"
@@ -198,7 +198,7 @@ export default function StationsPage() {
               <div className="modal-body">
                 <div className="mb-3">
                   <label htmlFor="stationName" className="form-label">
-                    Station Name
+                    Filling Station Name
                   </label>
                   <input
                     type="text"
@@ -259,7 +259,7 @@ export default function StationsPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Add Station"}
+                  {saving ? "Saving..." : "Add Filling Station"}
                 </button>
               </div>
             </form>

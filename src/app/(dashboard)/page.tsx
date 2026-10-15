@@ -63,8 +63,8 @@ export default function DashboardPage() {
           <h1 className="h3 fw-bold mb-1">Dashboard</h1>
         </div>
         <div className="alert alert-info">
-          Select or create a station to view metrics.{" "}
-          <Link href="/stations">Go to Stations</Link>
+          Select or create a filling station to view metrics.{" "}
+          <Link href="/stations">Go to Filling Stations</Link>
         </div>
       </div>
     );
