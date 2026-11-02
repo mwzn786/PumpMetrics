@@ -1,3 +1,19 @@
+This repository contains **PumpMetrics** (gas station dashboard at the repo root) and **HayatLink**, a Pakistan blood-donation app in [`blood-donation/`](./blood-donation).
+
+## HayatLink (blood donation)
+
+JavaScript Next.js App Router + Bootstrap, with PostgreSQL on Supabase. Demo mode works without keys.
+
+```bash
+cd blood-donation
+npm install
+npm run dev
+```
+
+See [`blood-donation/README.md`](./blood-donation/README.md) for schema setup, routes, and the 90-day donor cooldown.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
